@@ -1,3 +1,9 @@
+fork of https://github.com/appleorange1/openmailbox_downloader
+
+This fork contain personal modification for my own use case
+
+Upstream interested in merging as is can check out the patch-1 branch: https://github.com/appleorange1/openmailbox_downloader/compare/master...asl97:patch-1?expand=1
+
 # openmailbox_downloader
 Save a local copy of your openmailbox emails without using IMAP
 
