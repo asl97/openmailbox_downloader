@@ -11,19 +11,38 @@ If you have pip installed, you can do this with the command:
 `pip3 install -r requirements.txt`
 
 ## How this tool works
+
+#### The original way:
 To use this tool, you need to [log in to openmailbox's webmail](https://app.openmailbox.org/login).
 
 Then, you will need to view the cookies that openmailbox has put on your computer. In particular, you will need to find the _sessionid_ and the _csrftoken_.
 
 Then, you need to run this command:
+
 `./uidextract.py <csrftoken> <sessionid> [mailbox] [lowerbound] [upperbound]`
 
 where _csrftoken_ and _sessionid_ are the two cookies you found earlier, mailbox is the folder you want to download from (default to 'INBOX') and lowerbound and upperbound are the lowest and highest number messages you want respectively.
 
+#### The new way
+Provide your email address and password and it will login and get the cookies for you.
+
+The address and password will only be use to retrieve the cookies, you can check the source to verify it.
+
+The command:
+
+`./uidextract.py --name <example@openmailbox.org> --password <secret> --mailbox <INBOX> --bound <lower> <upper>`
+
+or
+
+`./uidextract.py --name <example> --domain <openmailbox.org> --password <secret> --mailbox <INBOX> --bound <lower> <upper>`
+
+#### Other information
 You can list your mailboxes (folders) using this command:
+
 `./uidextract.py --list <csrftoken> <sessionid>`
 
 There is an inbuilt help menu which is shown when running this command:
+
 `./uidextract.py --help`
 
 Note that you can only download a maximum of 500 messages each time you run this script. So, if you have more than 500 messages in a folder, you will have to run it multiple times, changing the upperbound and lowerbound values on each run.
