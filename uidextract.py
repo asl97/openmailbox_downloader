@@ -10,6 +10,14 @@ import requests
 from requests.packages.urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 
+class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        args_string = self._format_args(action, default)
+        return ', '.join(action.option_strings) + ' ' + args_string
+
 description = '''
 Save a local copy of your openmailbox emails without using IMAP
 
@@ -183,17 +191,17 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
         print("Deleted message " + str(uid))
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=description, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(description=description, formatter_class=CustomHelpFormatter)
     parser.add_argument('csrfcookie', nargs='?', type=str)
     parser.add_argument('sessionid', nargs='?', type=str)
     parser.add_argument('mailbox', nargs='?', type=str, default='INBOX', help='The mailbox to download from')
     parser.add_argument('lowerbound', nargs='?', type=int, default=1)
     parser.add_argument('upperbound', nargs='?', type=int, default=500)
-    parser.add_argument('-m','--mailbox', dest='mailbox2', type=str, help='The mailbox to download from')
-    parser.add_argument('-b','--bound', nargs=2, type=int, help='The lower and upper bound')
-    parser.add_argument('-n','--name', type=str, help='Email address/name')
-    parser.add_argument('-D','--domain', type=str, help='Domain, if not provided, assume it is in the address')
-    parser.add_argument('-p','--password', type=str, help='Email password')
+    parser.add_argument('-m','--mailbox', metavar='INBOX', dest='mailbox2', type=str, help='The mailbox to download from')
+    parser.add_argument('-b','--bound',  metavar=('lower', 'upper'), nargs=2, type=int, help='The lower and upper bound')
+    parser.add_argument('-n','--name', metavar='example', type=str, help='Email address/name')
+    parser.add_argument('-D','--domain', metavar='openmailbox.org', type=str, help='Domain, if not provided, assume it is in the address')
+    parser.add_argument('-p','--password', metavar='secret', type=str, help='Email password')
     parser.add_argument('-t','--trash', action='store_true', help='Auto trash downloaded mail')
     parser.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
     parser.add_argument('-v','--debug', action='count', help='print out more info', default=0)
