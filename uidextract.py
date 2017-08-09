@@ -190,9 +190,11 @@ if __name__ == '__main__':
     parser.add_argument('mailbox', nargs='?', type=str, default='INBOX', help='The mailbox to download from')
     parser.add_argument('lowerbound', nargs='?', type=int, default=1)
     parser.add_argument('upperbound', nargs='?', type=int, default=500)
-    parser.add_argument('-n','--name', help='Email address/name')
-    parser.add_argument('-D','--domain', help='Domain, if not provided, assume it is in the address')
-    parser.add_argument('-p','--password', help='Email password')
+    parser.add_argument('-m','--mailbox', dest='mailbox2', type=str, help='The mailbox to download from')
+    parser.add_argument('-b','--bound', nargs=2, type=int, help='The lower and upper bound')
+    parser.add_argument('-n','--name', type=str, help='Email address/name')
+    parser.add_argument('-D','--domain', type=str, help='Domain, if not provided, assume it is in the address')
+    parser.add_argument('-p','--password', type=str, help='Email password')
     parser.add_argument('-t','--trash', action='store_true', help='Auto trash downloaded mail')
     parser.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
     parser.add_argument('-v','--debug', action='count', help='print out more info', default=0)
@@ -205,6 +207,10 @@ if __name__ == '__main__':
     stop_on_existing = args.stop_on_existing
     csrfcookie = args.csrfcookie
     sessionid = args.sessionid
+
+    # prioritize dash args
+    mailbox = args.mailbox2 if args.mailbox2 is not None else args.mailbox
+    lowerbound, upperbound = args.bound if args.bound is not None else args.lowerbound, args.upperbound
 
     if not args.domain and args.name:
         if '@' in args.name:
@@ -253,10 +259,10 @@ if __name__ == '__main__':
         print('Exiting because of 0 mail')
         exit(0)
 
-    if args.upperbound <= args.lowerbound:
+    if upperbound <= lowerbound:
         elog("The lower bound must be less than the upper bound")
-    if args.upperbound - args.lowerbound > 500:
+    if upperbound - lowerbound > 500:
         elog('The difference between the upper bound and the lower'
               'bound must be less than or equal to 500.')
 
-    get_emails(s, args.mailbox, args.lowerbound, args.upperbound, args.trash, args.delete)
+    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete)
