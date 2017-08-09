@@ -91,7 +91,7 @@ def extract_csrftoken_and_set(s, link):
     dlog(csrftoken)
 
 def print_inboxes(foldernames):
-    
+    print()
     print('Available folders: ')
     print('\n'.join('\t'+name for name in foldernames))
 
@@ -102,8 +102,7 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
 
     # check if mailbox exists
     if not mailbox in foldernames:
-        print('Available folders:\n')
-        print(print_inboxes(foldernames))
+        print_inboxes(foldernames)
         elog('No such folder:', mailbox)
 
     mdatareq = 'https://app.openmailbox.org/requests/webmail?range={0}-{1}&sort=date&order=0&selected=&action=maillist&mailbox={2}'.format(lowerbound, upperbound, mailbox)
