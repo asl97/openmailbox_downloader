@@ -199,7 +199,7 @@ if __name__ == '__main__':
     parser.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
     parser.add_argument('-v','--debug', action='count', help='print out more info', default=0)
     parser.add_argument('-l','--list', action='store_true', help='List your mailboxes (folders) and exit')
-    parser.add_argument('--dontexitonfirstsignoftrouble', dest='stop_on_existing', action='store_false')
+    parser.add_argument('--donotexitonfirstsignoftrouble', action='store_false', dest='stop_on_existing', help='Do not stop even when something unexpected happens, WARNING: ACCIDENTAL DELETION MIGHT HAPPEN IF USE')
 
     args = parser.parse_args()
 
