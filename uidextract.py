@@ -207,6 +207,10 @@ if __name__ == '__main__':
     csrfcookie = args.csrfcookie
     sessionid = args.sessionid
 
+    if not args.name and not args.password and not args.csrfcookie and not args.sessionid:
+        parser.print_help()
+        exit(0)
+
     # prioritize dash args
     mailbox = args.mailbox2 if args.mailbox2 is not None else args.mailbox
     lowerbound, upperbound = args.bound if args.bound is not None else args.lowerbound, args.upperbound
