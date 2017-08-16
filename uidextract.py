@@ -277,6 +277,7 @@ if __name__ == '__main__':
         update_conf(s, args.csrfcookie, args.sessionid)
         count = s.get('https://app.openmailbox.org/requests/webmail?action=unseenandcount').json()
 
+    dlog(count)
     print('There are %d mails with %d unseen' % (count['messages'], count['unseen']))
 
     if args.list:
