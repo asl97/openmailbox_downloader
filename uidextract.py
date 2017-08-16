@@ -125,7 +125,8 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
     print("Finished getting list of emails")
 
     # get csrftoken require for modifiying mailbox (move and delete)
-    csrftoken = extract_csrftoken_and_set(s, 'https://app.openmailbox.org/webmail/')
+    if trash or delete:
+        csrftoken = extract_csrftoken_and_set(s, 'https://app.openmailbox.org/webmail/')
 
     os.makedirs('emails_output_dir', exist_ok=True)
     print("Created directory emails_output_dir if it didn't already exist")
