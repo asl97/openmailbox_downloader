@@ -5,6 +5,7 @@ import re
 import json
 import argparse
 import functools
+import itertools
 
 import requests
 from requests.packages.urllib3.util.retry import Retry
@@ -103,7 +104,18 @@ def print_inboxes(foldernames):
     print('Available folders: ')
     print('\n'.join('\t'+name for name in foldernames))
 
-def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
+def print_mail(meta, print_info):
+    dlog(meta, print_info)
+    def _print_mail(item):
+        dlog(item)
+        if item == 'name' or item == 'email':
+            return (item+':', meta['from'][0][item])
+        else:
+            return (item+':', meta[item])
+
+    return itertools.chain.from_iterable(map(_print_mail, print_info))
+
+def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, print_info=[]):
     print("Getting list of emails")
 
     foldernames = extract_folder_name(get_inboxes(s))
@@ -119,9 +131,6 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
     metadata = json.loads(s.get(mdatareq).text)
     dlog(metadata)
 
-    uids = []
-    for line in metadata['partial_list']:
-        uids.append(line['uid'])
     print("Finished getting list of emails")
 
     # get csrftoken require for modifiying mailbox (move and delete)
@@ -131,7 +140,8 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
     os.makedirs('emails_output_dir', exist_ok=True)
     print("Created directory emails_output_dir if it didn't already exist")
 
-    for uid in uids:
+    for meta in metadata['partial_list']:
+        uid = meta['uid']
         fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + ".eml"
         if not os.path.isfile(fname):
             req = 'https://app.openmailbox.org/requests/webmail?mailbox={0}&uid={1}&action=downloadmessage'.format(mailbox, str(uid))
@@ -139,9 +149,9 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False):
             with open(fname, 'wb') as eml:
                 for chunk in resp:
                     eml.write(chunk)
-            print("Saved message " + fname)
+            print("Saved message", fname, *print_mail(meta, print_info))
         else:
-            print("Already downloaded " + str(uid))
+            print("Already downloaded", uid)
             if trash or delete:
                 if stop_on_existing:
                     elog('Exiting incase of false postive (id reuse)')
@@ -203,11 +213,18 @@ if __name__ == '__main__':
     parser.add_argument('-n','--name', metavar='example', type=str, help='Email address/name')
     parser.add_argument('-D','--domain', metavar='openmailbox.org', type=str, help='Domain, if not provided, assume it is in the address')
     parser.add_argument('-p','--password', metavar='secret', type=str, help='Email password')
-    parser.add_argument('-t','--trash', action='store_true', help='Auto trash downloaded mail')
-    parser.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
-    parser.add_argument('-v','--debug', action='count', help='print out more info', default=0)
-    parser.add_argument('-l','--list', action='store_true', help='List your mailboxes (folders) and exit')
-    parser.add_argument('--donotexitonfirstsignoftrouble', action='store_false', dest='stop_on_existing', help='Do not stop even when something unexpected happens, WARNING: ACCIDENTAL DELETION MIGHT HAPPEN IF USE')
+    action_group = parser.add_argument_group('Mailbox Operators')
+    action_group.add_argument('-l','--list', action='store_true', help='List your mailboxes (folders) and exit')
+    action_group.add_argument('-t','--trash', action='store_true', help='Auto trash downloaded mail')
+    action_group.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
+    print_group = parser.add_argument_group('Mail Information', 'Print additional information when saving mails')
+    print_group.add_argument('-s','--subject', dest='print_info', action='append_const', const='subject')
+    print_group.add_argument('--attachment', dest='print_info', action='append_const', const='attachment')
+    print_group.add_argument('--from-name', dest='print_info', action='append_const', const='name')
+    print_group.add_argument('--from-email', dest='print_info', action='append_const', const='email')
+    dev_group = parser.add_argument_group('Dev')
+    dev_group.add_argument('-v','--debug', action='count', help='Print out more info', default=0)
+    dev_group.add_argument('--donotexitonfirstsignoftrouble', action='store_false', dest='stop_on_existing', help='Do not stop even when something unexpected happens, WARNING: ACCIDENTAL DELETION MIGHT HAPPEN IF USE')
 
     args = parser.parse_args()
 
@@ -277,4 +294,4 @@ if __name__ == '__main__':
         elog('The difference between the upper bound and the lower'
               'bound must be less than or equal to 500.')
 
-    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete)
+    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete, args.print_info)
