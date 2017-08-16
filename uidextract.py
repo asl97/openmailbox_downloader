@@ -239,7 +239,7 @@ if __name__ == '__main__':
 
     # prioritize dash args
     mailbox = args.mailbox2 if args.mailbox2 is not None else args.mailbox
-    lowerbound, upperbound = args.bound if args.bound is not None else args.lowerbound, args.upperbound
+    lowerbound, upperbound = args.bound if args.bound is not None else (args.lowerbound, args.upperbound)
 
     if not args.domain and args.name:
         if '@' in args.name:
