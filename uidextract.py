@@ -24,7 +24,7 @@ Save a local copy of your openmailbox emails without using IMAP
 
 csrfcookie and sessionid are the two cookies use by the webmail
 
-Note that you can only download a maximum of 500 messages each time you run this script. So, if you have more than 500 messages in a folder, you will have to run it multiple times, changing the upperbound and lowerbound values on each run.
+Note that you can only download a maximum of 500 messages each time you run this script unless --auto is use. So, if you have more than 500 messages in a folder, you will have to run it multiple times, changing the upperbound and lowerbound values on each run.
 '''
 
 @functools.wraps(print)
@@ -115,7 +115,7 @@ def print_mail(meta, print_info):
 
     return itertools.chain.from_iterable(map(_print_mail, print_info))
 
-def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, print_info=[]):
+def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, auto=False, print_info=[]):
     print("Getting list of emails")
 
     foldernames = extract_folder_name(get_inboxes(s))
@@ -125,7 +125,7 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, pr
         print_inboxes(foldernames)
         elog('No such folder:', mailbox)
 
-    mdatareq = 'https://app.openmailbox.org/requests/webmail?range={0}-{1}&sort=date&order=0&selected=&action=maillist&mailbox={2}'.format(lowerbound, upperbound, mailbox)
+    mdatareq = 'https://app.openmailbox.org/requests/webmail?range={0}-{1}&sort=date&order=1&selected=&action=maillist&mailbox={2}'.format(lowerbound, upperbound, mailbox)
     dlog(mdatareq)
 
     metadata = s.get(mdatareq).json()
@@ -140,43 +140,65 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, pr
     os.makedirs('emails_output_dir', exist_ok=True)
     print("Created directory emails_output_dir if it didn't already exist")
 
-    for meta in metadata['partial_list']:
-        uid = meta['uid']
-        fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + ".eml"
-        if not os.path.isfile(fname):
-            req = 'https://app.openmailbox.org/requests/webmail?mailbox={0}&uid={1}&action=downloadmessage'.format(mailbox, str(uid))
-            resp = s.get(req, stream=True)
-            with open(fname, 'wb') as eml:
-                for chunk in resp:
-                    eml.write(chunk)
-            print("Saved message", fname, *print_mail(meta, print_info))
+    # Offset mail index by one so we shouldn't get the same mail twice
+    diffbound = upperbound - lowerbound + 1
+
+    while True:
+        for meta in metadata['partial_list']:
+            uid = meta['uid']
+            fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + ".eml"
+            if not os.path.isfile(fname):
+                req = 'https://app.openmailbox.org/requests/webmail?mailbox={0}&uid={1}&action=downloadmessage'.format(mailbox, str(uid))
+                resp = s.get(req, stream=True)
+                with open(fname, 'wb') as eml:
+                    for chunk in resp:
+                        eml.write(chunk)
+                print("Saved message", fname, *print_mail(meta, print_info))
+            else:
+                print("Already downloaded", uid)
+                if trash or delete:
+                    if stop_on_existing:
+                        elog('Exiting incase of false postive (id reuse)')
+                    else:
+                        print('Stopping trash and deletion incase of false postive (id reuse)')
+                        trash = delete = False
+
+            if not trash and not delete: continue
+
+            # move 'downloaded' mail from inbox to trash require by webmail for deletion
+            r = s.post('https://app.openmailbox.org/requests/webmail',
+                       data={'action':'move', 'mailbox':mailbox, 'dest':'Trash', 'uids':uid}
+                       )
+
+            result = r.json()
+            if not 'success' in result:
+                raise Exception('something wrong:', result)
+
+            print("Moved message " + str(uid) + " to trash")
+
+        if not auto:
+            break
+
+        # we assume the mail was moved out of the mailbox if trash or delete is set
+        # so we just need to request the same bound again
+        if not trash and not delete:
+            upperbound += diffbound
+            lowerbound += diffbound
+
+        if metadata['total_mailbox_mail_count'] > 0 and not metadata['total_mailbox_mail_count'] < lowerbound:
+            mdatareq = 'https://app.openmailbox.org/requests/webmail?range={0}-{1}&sort=date&order=1&selected=&action=maillist&mailbox={2}'.format(lowerbound, upperbound, mailbox)
+            dlog(mdatareq)
+
+            metadata = s.get(mdatareq).json()
+            dlog(metadata)
         else:
-            print("Already downloaded", uid)
-            if trash or delete:
-                if stop_on_existing:
-                    elog('Exiting incase of false postive (id reuse)')
-                else:
-                    print('Stopping trash and deletion incase of false postive (id reuse)')
-                    trash = delete = False
-
-        if not trash and not delete: continue
-
-        # move 'downloaded' mail from inbox to trash require by webmail for deletion
-        r = s.post('https://app.openmailbox.org/requests/webmail',
-                   data={'action':'move', 'mailbox':mailbox, 'dest':'Trash', 'uids':uid}
-                   )
-
-        result = r.json()
-        if not 'success' in result:
-            raise Exception('something wrong:', result)
-
-        print("Moved message " + str(uid) + " to trash")
+            break
 
     if not delete: exit(0)
 
     print("Getting list of trash for autodeletion")
 
-    mdatareq = 'https://app.openmailbox.org/requests/webmail?range=1-500&sort=date&order=0&selected=&action=maillist&mailbox=Trash'
+    mdatareq = 'https://app.openmailbox.org/requests/webmail?range=1-500&sort=date&order=1&selected=&action=maillist&mailbox=Trash'
     dlog(mdatareq)
 
     metadata = s.get(mdatareq).json()
@@ -215,6 +237,7 @@ if __name__ == '__main__':
     parser.add_argument('-p','--password', metavar='secret', type=str, help='Email password')
     action_group = parser.add_argument_group('Mailbox Operators')
     action_group.add_argument('-l','--list', action='store_true', help='List your mailboxes (folders) and exit')
+    action_group.add_argument('-a','--auto', action='store_true', help='Auto download all the mails')
     action_group.add_argument('-t','--trash', action='store_true', help='Auto trash downloaded mail')
     action_group.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
     print_group = parser.add_argument_group('Mail Information', 'Print additional information when saving mails')
@@ -289,10 +312,10 @@ if __name__ == '__main__':
         print('Exiting because of 0 mail')
         exit(0)
 
-    if upperbound <= lowerbound:
-        elog("The lower bound must be less than the upper bound")
+    if upperbound < lowerbound:
+        elog("The lower bound must be less than or equal the upper bound")
     if upperbound - lowerbound > 500:
         elog('The difference between the upper bound and the lower'
               'bound must be less than or equal to 500.')
 
-    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete, args.print_info)
+    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete, args.auto, args.print_info)
