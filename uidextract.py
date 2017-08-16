@@ -86,7 +86,7 @@ def get_inboxes(s):
     mdatareq = 'https://app.openmailbox.org/requests/webmail?action=folderlist'
     dlog(mdatareq)
 
-    folderdata = json.loads(s.get(mdatareq).text)
+    folderdata = s.get(mdatareq).json()
     dlog(folderdata)
 
     return folderdata
@@ -128,7 +128,7 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, pr
     mdatareq = 'https://app.openmailbox.org/requests/webmail?range={0}-{1}&sort=date&order=0&selected=&action=maillist&mailbox={2}'.format(lowerbound, upperbound, mailbox)
     dlog(mdatareq)
 
-    metadata = json.loads(s.get(mdatareq).text)
+    metadata = s.get(mdatareq).json()
     dlog(metadata)
 
     print("Finished getting list of emails")
@@ -179,7 +179,7 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, pr
     mdatareq = 'https://app.openmailbox.org/requests/webmail?range=1-500&sort=date&order=0&selected=&action=maillist&mailbox=Trash'
     dlog(mdatareq)
 
-    metadata = json.loads(s.get(mdatareq).text)
+    metadata = s.get(mdatareq).json()
     dlog(metadata)
 
     trash_uids = []
