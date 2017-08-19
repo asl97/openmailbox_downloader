@@ -101,7 +101,7 @@ Dev:
 
 The saved emails will be in the folder `emails_output_dir`.  The format will be `<mailbox_name>-<uid>.eml`.
 
-If the script gets interrupted, the script tries to start from where it left off so you don't have to redownload emails that you have already downloaded.
+If the script gets interrupted, the script tries to avoid redownload emails that you have already downloaded.
 
 ## Examples
 
