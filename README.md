@@ -45,7 +45,59 @@ There is an inbuilt help menu which is shown when running this command:
 
 `./uidextract.py --help`
 
+Output as of 63f1e61948bf7c5183c356ef07df7fd39212dbbb
+```
+usage: uidextract.py [-h] [-m INBOX] [-b lower upper] [-n example]
+                     [-D openmailbox.org] [-p secret] [-l] [-a] [-t] [-d] [-s]
+                     [--attachment] [--from-name] [--from-email] [-v]
+                     [--donotexitonfirstsignoftrouble]
+                     [csrfcookie] [sessionid] [mailbox] [lowerbound]
+                     [upperbound]
+
+Save a local copy of your openmailbox emails without using IMAP
+
+csrfcookie and sessionid are the two cookies use by the webmail
+
 Note that you can only download a maximum of 500 messages each time you run this script. So, if you have more than 500 messages in a folder, you will have to run it multiple times, changing the upperbound and lowerbound values on each run.
+
+positional arguments:
+  csrfcookie
+  sessionid
+  mailbox               The mailbox to download from
+  lowerbound
+  upperbound
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -m, --mailbox INBOX   The mailbox to download from
+  -b, --bound lower upper
+                        The lower and upper bound
+  -n, --name example    Email address/name
+  -D, --domain openmailbox.org
+                        Domain, if not provided, assume it is in the address
+  -p, --password secret
+                        Email password
+
+Mailbox Operators:
+  -l, --list            List your mailboxes (folders) and exit
+  -a, --auto            Auto download all the mails
+  -t, --trash           Auto trash downloaded mail
+  -d, --delete          Auto delete downloaded mail
+
+Mail Information:
+  Print additional information when saving mails
+
+  -s, --subject
+  --attachment
+  --from-name
+  --from-email
+
+Dev:
+  -v, --debug           Print out more info
+  --donotexitonfirstsignoftrouble
+                        Do not stop even when something unexpected happens,
+                        WARNING: ACCIDENTAL DELETION MIGHT HAPPEN IF USE
+```
 
 The saved emails will be in the folder `emails_output_dir`.  The format will be `<mailbox_name>-<uid>.eml`.
 
