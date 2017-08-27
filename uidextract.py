@@ -305,7 +305,7 @@ if __name__ == '__main__':
 
     if args.list:
         print()
-        print_inboxes(extract_folder_name(get_inboxes(session)))
+        print_inboxes(extract_folder_name(get_inboxes(s)))
         exit(0)
 
     if count['messages'] == 0:
