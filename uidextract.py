@@ -148,21 +148,18 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, au
         for meta in metadata['partial_list']:
             uid = meta['uid']
             fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + ".eml"
-            if not os.path.isfile(fname):
-                req = 'https://app.openmailbox.org/requests/webmail?mailbox={0}&uid={1}&action=downloadmessage'.format(mailbox, str(uid))
-                resp = s.get(req, stream=True)
-                with open(fname, 'wb') as eml:
-                    for chunk in resp:
-                        eml.write(chunk)
-                print("Saved message", fname, *print_mail(meta, print_info))
-            else:
-                print("Already downloaded", uid)
-                if trash or delete:
-                    if stop_on_existing:
-                        elog('Exiting incase of false postive (id reuse)')
-                    else:
-                        print('Stopping trash and deletion incase of false postive (id reuse)')
-                        trash = delete = False
+            if os.path.isfile(fname):
+                i = 1
+                while os.path.isfile(fname):
+                    fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + " (%d)" % i + ".eml"
+                    i += 1
+
+            req = 'https://app.openmailbox.org/requests/webmail?mailbox={0}&uid={1}&action=downloadmessage'.format(mailbox, str(uid))
+            resp = s.get(req, stream=True)
+            with open(fname, 'wb') as eml:
+                for chunk in resp:
+                    eml.write(chunk)
+            print("Saved message", fname, *print_mail(meta, print_info))
 
             if not trash and not delete: continue
 
