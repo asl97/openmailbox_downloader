@@ -116,7 +116,7 @@ def print_mail(meta, print_info):
 
     return itertools.chain.from_iterable(map(_print_mail, print_info))
 
-def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, auto=False, print_info=[]):
+def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, auto=False, skip=False, print_info=[]):
     print("Getting list of emails")
 
     foldernames = extract_folder_name(get_inboxes(s))
@@ -149,6 +149,9 @@ def get_emails(s, mailbox, lowerbound, upperbound, trash=False, delete=False, au
             uid = meta['uid']
             fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + ".eml"
             if os.path.isfile(fname):
+                if skip:
+                    print("Skipped message", uid, "[id existing]")
+                    continue
                 i = 1
                 while os.path.isfile(fname):
                     fname = 'emails_output_dir/' + str(mailbox) + '-' + str(uid) + " (%d)" % i + ".eml"
@@ -235,6 +238,7 @@ if __name__ == '__main__':
     parser.add_argument('-p','--password', metavar='secret', type=str, help='Email password')
     action_group = parser.add_argument_group('Mailbox Operators')
     action_group.add_argument('-l','--list', action='store_true', help='List your mailboxes (folders) and exit')
+    action_group.add_argument('-S','--skip', action='store_true', help='Skip mail with existing id')
     action_group.add_argument('-a','--auto', action='store_true', help='Auto download all the mails')
     action_group.add_argument('-t','--trash', action='store_true', help='Auto trash downloaded mail')
     action_group.add_argument('-d','--delete', action='store_true', help='Auto delete downloaded mail')
@@ -316,4 +320,4 @@ if __name__ == '__main__':
         elog('The difference between the upper bound and the lower'
               'bound must be less than or equal to 500.')
 
-    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete, args.auto, args.print_info)
+    get_emails(s, mailbox, lowerbound, upperbound, args.trash, args.delete, args.auto, args.skip, args.print_info)
