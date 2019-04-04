@@ -48,7 +48,8 @@ def setup(csrfcookie=None, sessionid=None):
                     status_forcelist=[500, 502, 504])
     s.mount('https://', HTTPAdapter(max_retries=retries))
     if csrfcookie and sessionid:
-        s.headers.update({'Cookie': 'csrftoken={0};sessionid={1}'.format(csrfcookie, sessionid)})
+        s.headers.update({'Cookie': 'csrftoken={0};sessionid={1}'.format(csrfcookie, sessionid),
+                          'Referer':'https://app.openmailbox.org/'})
 
     return s
 
